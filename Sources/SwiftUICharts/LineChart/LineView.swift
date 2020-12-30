@@ -57,6 +57,7 @@ public struct LineView: View {
                             .foregroundColor(self.colorScheme == .dark ? self.darkModeStyle.backgroundColor : self.style.backgroundColor)
                         if(self.showLegend){
                             Legend(data: self.data,
+								   valueSpecifier: valueSpecifier,
 								   frame: .constant(reader.frame(in: .local)), hideHorizontalLines: self.$magnifierContext.hideHorizontalLines)
                                 .transition(.opacity)
                                 .animation(Animation.easeOut(duration: 1).delay(1))
@@ -80,7 +81,10 @@ public struct LineView: View {
                     }
                     .frame(width: geometry.frame(in: .local).size.width, height: 240)
                     .offset(x: 0, y: 40)
-					MagnifierRect(currentNumber: self.$magnifierContext.selectedValue, valueSpecifier: self.valueSpecifier)
+					MagnifierRect(
+						currentNumber: self.$magnifierContext.selectedValue,
+						valueSpecifier: self.valueSpecifier
+					)
 						.opacity(self.magnifierContext.opacity)
 						.offset(x: self.magnifierContext.dragLocation.x - geometry.frame(in: .local).size.width/2, y: 36)
                 }
