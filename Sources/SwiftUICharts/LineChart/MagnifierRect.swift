@@ -13,7 +13,7 @@ public struct MagnifierRect: View {
     @Environment(\.colorScheme) var colorScheme: ColorScheme
 	
     public var body: some View {
-        ZStack{
+        ZStack {
             Text("\(self.currentNumber, specifier: valueSpecifier)")
 				.font(.system(size: 14, weight: .medium))
                 .offset(x: 0, y: -110)

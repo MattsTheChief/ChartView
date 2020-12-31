@@ -21,6 +21,8 @@ public struct LineView: View {
 	
 	@State private var magnifierContext: MagnifierContext = MagnifierContext()
 	@GestureState private var dragLocation: CGPoint = .zero
+	
+	private let yAxisWidth: CGFloat = 50.0
     
     public init(data: [Double],
                 title: String? = nil,
@@ -55,15 +57,19 @@ public struct LineView: View {
                     GeometryReader{ reader in
                         Rectangle()
                             .foregroundColor(self.colorScheme == .dark ? self.darkModeStyle.backgroundColor : self.style.backgroundColor)
-                        if(self.showLegend){
+                        if self.showLegend {
                             Legend(data: self.data,
 								   valueSpecifier: valueSpecifier,
-								   frame: .constant(reader.frame(in: .local)), hideHorizontalLines: self.$magnifierContext.hideHorizontalLines)
+								   frame: .constant(reader.frame(in: .local)),
+								   hideHorizontalLines: self.$magnifierContext.hideHorizontalLines)
                                 .transition(.opacity)
                                 .animation(Animation.easeOut(duration: 1).delay(1))
                         }
                         Line(data: self.data,
-                             frame: .constant(CGRect(x: 0, y: 0, width: reader.frame(in: .local).width - 30, height: reader.frame(in: .local).height)),
+                             frame: .constant(CGRect(x: yAxisWidth,
+													 y: 0,
+													 width: reader.frame(in: .local).width - yAxisWidth,
+													 height: reader.frame(in: .local).height)),
 							 touchLocation: self.$magnifierContext.indicatorLocation,
 							 showIndicator: self.$magnifierContext.hideHorizontalLines,
                              minDataValue: .constant(nil),
@@ -71,7 +77,7 @@ public struct LineView: View {
                              showBackground: false,
                              gradient: self.style.gradientColor
                         )
-                        .offset(x: 30, y: -20)
+						.offset(x: yAxisWidth)
                         .onAppear(){
                             self.showLegend = true
                         }
@@ -97,42 +103,46 @@ public struct LineView: View {
             }
 			.onChange(of: dragLocation) { newValue in
 				
-				let closestPoint = self.getClosestDataPoint(toPoint: dragLocation, width: geometry.frame(in: .local).size.width-30, height: 240)
+				let closestPoint = self.getClosestDataPoint(toPoint: newValue,
+															width: geometry.frame(in: .local).size.width,
+															height: 240)
 				
-				guard newValue != .zero,
+				guard newValue.x >= yAxisWidth,
 					  closestPoint != .zero else {
 					magnifierContext = MagnifierContext()
 					return
 				}
 				
 				magnifierContext = MagnifierContext(opacity: 1.0,
-													dragLocation: dragLocation,
+													dragLocation: newValue,
 													closestPoint: closestPoint,
-													selectedValue: self.getClosestDataValue(toPoint: dragLocation, width: geometry.frame(in: .local).size.width-30, height: 240),
-													indicatorLocation: CGPoint(x: max(dragLocation.x-30,0), y: 32),
+													selectedValue: self.getClosestDataValue(toPoint: newValue,
+																							width: geometry.frame(in: .local).size.width + yAxisWidth,
+																							height: 240),
+													indicatorLocation: CGPoint(x: max(newValue.x, 0), y: 32),
 													hideHorizontalLines: true)
 			}
         }
     }
     
-    func getClosestDataPoint(toPoint: CGPoint, width:CGFloat, height: CGFloat) -> CGPoint {
-        let points = self.data.onlyPoints()
-        let stepWidth: CGFloat = width / CGFloat(points.count-1)
+    func getClosestDataPoint(toPoint: CGPoint, width: CGFloat, height: CGFloat) -> CGPoint {
+		let points = self.data.onlyPoints()
+        let stepWidth: CGFloat = width / CGFloat(points.count)
         let stepHeight: CGFloat = height / CGFloat(points.max()! + points.min()!)
         
-        let index = Int(floor((toPoint.x-15)/stepWidth))
-        if (index >= 0 && index < points.count){
+        let index = Int(floor((toPoint.x)/stepWidth))
+        if index >= 0 && index < points.count {
             return CGPoint(x: CGFloat(index)*stepWidth, y: CGFloat(points[index])*stepHeight)
         }
         return .zero
     }
 	
-	func getClosestDataValue(toPoint: CGPoint, width:CGFloat, height: CGFloat) -> Double {
+	func getClosestDataValue(toPoint: CGPoint, width: CGFloat, height: CGFloat) -> Double {
 		let points = self.data.onlyPoints()
-		let stepWidth: CGFloat = width / CGFloat(points.count-1)
+		let stepWidth: CGFloat = width / CGFloat(points.count)
 		
-		let index = Int(floor((toPoint.x-15)/stepWidth))
-		if (index >= 0 && index < points.count){
+		let index = Int(floor((toPoint.x)/stepWidth))
+		if index >= 0 && index < points.count {
 			return points[index]
 		}
 		return 0.0
