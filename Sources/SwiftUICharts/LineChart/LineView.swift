@@ -24,13 +24,13 @@ public struct LineView: View {
 	
 	private let yAxisWidth: CGFloat = 50.0
     
-    public init(data: [Double],
+    public init(data: [(String, Double)],
                 title: String? = nil,
                 legend: String? = nil,
                 style: ChartStyle = Styles.lineChartStyleOne,
                 valueSpecifier: String? = "%.1f") {
         
-        self.data = ChartData(points: data)
+        self.data = ChartData(values: data)
         self.title = title
         self.legend = legend
         self.style = style
@@ -88,7 +88,7 @@ public struct LineView: View {
                     .frame(width: geometry.frame(in: .local).size.width, height: 240)
                     .offset(x: 0, y: 40)
 					MagnifierRect(
-						currentNumber: self.$magnifierContext.selectedValue,
+						selectedPoint: self.$magnifierContext.selectedPoint,
 						valueSpecifier: self.valueSpecifier
 					)
 						.opacity(self.magnifierContext.opacity)
@@ -103,59 +103,39 @@ public struct LineView: View {
             }
 			.onChange(of: dragLocation) { newValue in
 				
-				let closestPoint = self.getClosestDataPoint(toPoint: newValue,
-															width: geometry.frame(in: .local).size.width - yAxisWidth,
-															height: 240)
-				
 				guard newValue.x >= yAxisWidth,
-					  closestPoint != .zero else {
+					  newValue.x < geometry.frame(in: .local).size.width else {
 					magnifierContext = MagnifierContext()
 					return
 				}
 				
 				magnifierContext = MagnifierContext(opacity: 1.0,
 													dragLocation: newValue,
-													closestPoint: closestPoint,
-													selectedValue: self.getClosestDataValue(toPoint: newValue,
-																							width: geometry.frame(in: .local).size.width - yAxisWidth,
-																							height: 240),
+													selectedPoint: self.getSelectedDataPoint(toPoint: newValue,
+																							 width: geometry.frame(in: .local).size.width - yAxisWidth),
 													indicatorLocation: CGPoint(x: max(newValue.x, 0), y: 32),
 													hideHorizontalLines: true)
 			}
         }
     }
-    
-    func getClosestDataPoint(toPoint: CGPoint, width: CGFloat, height: CGFloat) -> CGPoint {
-		let points = self.data.onlyPoints()
-        let stepWidth: CGFloat = width / CGFloat(points.count)
-        let stepHeight: CGFloat = height / CGFloat(points.max()! + points.min()!)
-        
-        let index = Int(floor((toPoint.x-yAxisWidth)/stepWidth))
-        if index >= 0 && index < points.count {
-            return CGPoint(x: CGFloat(index)*stepWidth, y: CGFloat(points[index])*stepHeight)
-        }
-        return .zero
-    }
 	
-	func getClosestDataValue(toPoint: CGPoint, width: CGFloat, height: CGFloat) -> Double {
-		let points = self.data.onlyPoints()
+	func getSelectedDataPoint(toPoint: CGPoint, width: CGFloat) -> (String, Double) {
+		let points = self.data.points
 		let stepWidth: CGFloat = width / CGFloat(points.count)
 				
 		let index = Int(floor((toPoint.x-yAxisWidth)/stepWidth))
 		if index >= 0 && index < points.count {
 			return points[index]
 		}
-		return 0.0
+		
+		return ("", 0.0)
 	}
 }
 
 struct LineView_Previews: PreviewProvider {
     static var previews: some View {
         Group {
-            LineView(data: [8,23,54,32,12,37,7,23,43], title: "Full chart", style: Styles.lineChartStyleOne)
-            
-            LineView(data: [282.502, 284.495, 283.51, 285.019, 285.197, 286.118, 288.737, 288.455, 289.391, 287.691, 285.878, 286.46, 286.252, 284.652, 284.129, 284.188], title: "Full chart", style: Styles.lineChartStyleOne)
-            
+            LineView(data: [("a", 8), ("b", 23), ("c", 54)], title: "Full chart", style: Styles.lineChartStyleOne)
         }
     }
 }
@@ -164,21 +144,18 @@ struct LineView_Previews: PreviewProvider {
 class MagnifierContext: ObservableObject {
 	@Published var opacity: Double
 	@Published var dragLocation: CGPoint
-	@Published var closestPoint: CGPoint
-	@Published var selectedValue: Double
+	@Published var selectedPoint: (String, Double)
 	@Published var indicatorLocation: CGPoint
 	@Published var hideHorizontalLines: Bool
 	
 	init(opacity: Double = 0.0,
 		 dragLocation: CGPoint = .zero,
-		 closestPoint: CGPoint = .zero,
-		 selectedValue: Double = 0.0,
+		 selectedPoint: (String, Double) = ("", 0.0),
 		 indicatorLocation: CGPoint = .zero,
 		 hideHorizontalLines: Bool = false) {
 		self.opacity = opacity
 		self.dragLocation = dragLocation
-		self.closestPoint = closestPoint
-		self.selectedValue = selectedValue
+		self.selectedPoint = selectedPoint
 		self.indicatorLocation = indicatorLocation
 		self.hideHorizontalLines = hideHorizontalLines
 	}

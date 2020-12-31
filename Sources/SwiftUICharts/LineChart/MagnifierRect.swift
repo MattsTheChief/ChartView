@@ -8,16 +8,20 @@
 import SwiftUI
 
 public struct MagnifierRect: View {
-    @Binding var currentNumber: Double
+    @Binding var selectedPoint: (String, Double)
     let valueSpecifier: String
     @Environment(\.colorScheme) var colorScheme: ColorScheme
 	
     public var body: some View {
         ZStack {
-            Text("\(self.currentNumber, specifier: valueSpecifier)")
+			Text("\(self.selectedPoint.1, specifier: valueSpecifier)")
 				.font(.system(size: 14, weight: .medium))
                 .offset(x: 0, y: -110)
                 .foregroundColor(self.colorScheme == .dark ? Color.white : Color.black)
+			Text(self.selectedPoint.0)
+				.font(.system(size: 14, weight: .light))
+				.offset(x: 0, y: -88)
+				.foregroundColor(Color(.systemGray))
             if self.colorScheme == .dark {
                 RoundedRectangle(cornerRadius: 16)
                     .stroke(Color.white, lineWidth: self.colorScheme == .dark ? 2 : 0)
