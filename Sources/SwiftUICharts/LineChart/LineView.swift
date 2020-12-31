@@ -104,7 +104,7 @@ public struct LineView: View {
 			.onChange(of: dragLocation) { newValue in
 				
 				let closestPoint = self.getClosestDataPoint(toPoint: newValue,
-															width: geometry.frame(in: .local).size.width,
+															width: geometry.frame(in: .local).size.width - yAxisWidth,
 															height: 240)
 				
 				guard newValue.x >= yAxisWidth,
@@ -117,7 +117,7 @@ public struct LineView: View {
 													dragLocation: newValue,
 													closestPoint: closestPoint,
 													selectedValue: self.getClosestDataValue(toPoint: newValue,
-																							width: geometry.frame(in: .local).size.width + yAxisWidth,
+																							width: geometry.frame(in: .local).size.width - yAxisWidth,
 																							height: 240),
 													indicatorLocation: CGPoint(x: max(newValue.x, 0), y: 32),
 													hideHorizontalLines: true)
@@ -130,7 +130,7 @@ public struct LineView: View {
         let stepWidth: CGFloat = width / CGFloat(points.count)
         let stepHeight: CGFloat = height / CGFloat(points.max()! + points.min()!)
         
-        let index = Int(floor((toPoint.x)/stepWidth))
+        let index = Int(floor((toPoint.x-yAxisWidth)/stepWidth))
         if index >= 0 && index < points.count {
             return CGPoint(x: CGFloat(index)*stepWidth, y: CGFloat(points[index])*stepHeight)
         }
@@ -140,8 +140,8 @@ public struct LineView: View {
 	func getClosestDataValue(toPoint: CGPoint, width: CGFloat, height: CGFloat) -> Double {
 		let points = self.data.onlyPoints()
 		let stepWidth: CGFloat = width / CGFloat(points.count)
-		
-		let index = Int(floor((toPoint.x)/stepWidth))
+				
+		let index = Int(floor((toPoint.x-yAxisWidth)/stepWidth))
 		if index >= 0 && index < points.count {
 			return points[index]
 		}
